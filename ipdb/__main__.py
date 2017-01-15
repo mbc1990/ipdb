@@ -24,7 +24,7 @@ def import_module(possible_modules, needed_module):
             if count == 0:
                 raise
 try:
-    # IPython 5.0 and newer
+    # For some versions of IPython 5.x
     from IPython.terminal.debugger import TerminalPdb as Pdb
     from IPython.core.debugger import BdbQuit_excepthook
 except ImportError:
@@ -70,9 +70,9 @@ def_exec_lines = [line + '\n' for line in ipapp.exec_lines]
 
 
 def _init_pdb(context=3):
-    if 'context' in getargspec(Pdb.__init__)[0]:
+    try:
         p = Pdb(def_colors, context=context)
-    else:
+    except TypeError:
         p = Pdb(def_colors)
     p.rcLines += def_exec_lines
     return p
@@ -86,7 +86,14 @@ def wrap_sys_excepthook():
         sys.excepthook = BdbQuit_excepthook
 
 
-def set_trace(frame=None, context=3):
+def set_trace(frame=None, context=None):
+    if context:
+        pass
+    elif os.getenv('IPDB_CONTEXT_SIZE'):
+        context = int(os.environ['IPDB_CONTEXT_SIZE'])
+    else:
+        context = 3
+
     wrap_sys_excepthook()
     if frame is None:
         frame = sys._getframe().f_back
